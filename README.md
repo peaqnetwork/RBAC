@@ -57,7 +57,9 @@ This file describes all the interfaces that can be used to interact with your co
     If you look closely at the **constructors** and **messages**, you will also notice a selector which contains a 4-byte hash of the function name and is used to route your contract calls to the correct functions.
 
 Running a contract on Node:
+    
     Start a Substrate Smart Contracts node and configure the Canvas UI to interact with it.
 
 Deploying a Smart Contract:
+
     https://docs.substrate.io/tutorials/v3/ink-workshop/pt1/#deploying-your-contract
