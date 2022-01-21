@@ -59,6 +59,7 @@ This file describes all the interfaces that can be used to interact with your co
 Running a contract on Node:
     
     Start a Substrate Smart Contracts node and configure the Canvas UI to interact with it.
+    https://docs.substrate.io/tutorials/v3/ink-workshop/pt1/#running-a-substrate-smart-contracts-node
 
 Deploying a Smart Contract:
 
