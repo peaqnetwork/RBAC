@@ -210,6 +210,7 @@ use ink_lang as ink;
             else
             {
                 self.map_user_group_to_role[&user_or_group_did].push(role);
+
             }
             Ok(())
         }
@@ -224,7 +225,7 @@ use ink_lang as ink;
             }
             else
             {
-                if let Some(index) = self.map_user_to_group[&user_or_group_did].iter().position(|r| r.id == role_did) 
+                if let Some(index) = self.map_user_group_to_role[&user_or_group_did].iter().position(|r| r.id == role_did) 
                 {
                     self.map_user_group_to_role[&user_or_group_did].remove(index);
                 } 
@@ -240,18 +241,19 @@ use ink_lang as ink;
         #[ink(message)]
         pub fn read_user_or_group_roles(&mut self, user_or_group_did: [u8; 32]) ->Vec<[u8; 32]>
         {
-             let mut vec_roles = Vec::new();
+            let mut vec_roles = Vec::new();
 
             if self.map_user_group_to_role.contains_key(&user_or_group_did) 
             {
-                for role in self.map_user_to_group[&user_or_group_did].iter() 
+                for role in self.map_user_group_to_role[&user_or_group_did].iter() 
                 {
                     vec_roles.push(role.id);
+
                 }
             }                 
             vec_roles
         }
-
+        
 
         // Add Role to the Permission
         #[ink(message)]
@@ -435,6 +437,124 @@ use ink_lang as ink;
             let vec_users_in_group = rbac.read_user_group([1;32]);
             assert_eq!(vec_users_in_group.len(),2);
         }
+
+        // Assign single roles to single one/group: many to one
+        #[ink::test]
+        fn assign_single_role_to_user_or_group()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_user_or_group_to_role([1;32],[10;32]).unwrap();
+
+            let vec_roles = rbac.read_user_or_group_roles([1;32]);
+            assert_eq!(vec_roles.len(),1);
+
+        }
+
+        // Assign muliple roles to single user/group: many to one
+        #[ink::test]
+        fn assign_multiple_role_to_user_or_group()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_user_or_group_to_role([1;32],[10;32]).unwrap();
+            rbac.add_user_or_group_to_role([1;32],[11;32]).unwrap();
+            rbac.add_user_or_group_to_role([1;32],[12;32]).unwrap();
+
+            let vec_roles = rbac.read_user_or_group_roles([1;32]);
+            assert_eq!(vec_roles.len(),3);
+
+        }
+
+        // Assign muliple roles to muliple user/group: many to many
+        #[ink::test]
+        fn assign_single_role_to_multiple_user_or_group()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_user_or_group_to_role([1;32],[10;32]).unwrap();
+            rbac.add_user_or_group_to_role([2;32],[10;32]).unwrap();
+            rbac.add_user_or_group_to_role([2;32],[11;32]).unwrap();
+
+            let vec_roles = rbac.read_user_or_group_roles([1;32]);
+            assert_eq!(vec_roles.len(),1);
+
+            let vec_roles = rbac.read_user_or_group_roles([2;32]);
+            assert_eq!(vec_roles.len(),2);
+
+        }
+
+        #[ink::test]
+        fn remove_role_from_user_or_group_works()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_user_or_group_to_role([1;32],[10;32]).unwrap();
+            rbac.add_user_or_group_to_role([1;32],[11;32]).unwrap();
+            rbac.add_user_or_group_to_role([1;32],[12;32]).unwrap();
+
+            let mut vec_roles = rbac.read_user_or_group_roles([1;32]);
+            assert_eq!(vec_roles.len(),3);
+
+            // delete user from group
+            assert_eq!(
+                rbac.remove_user_or_group_from_role([1;32],[12;32]),
+                Ok(())
+            );
+
+            // new user count should be reduced 
+            vec_roles = rbac.read_user_or_group_roles([1;32]);
+            assert_eq!(vec_roles.len(),2)
+
+        }
+
+         //remove_user_or_group_from_role_wrong_user_group() when wrong user/group id passed
+         #[ink::test]
+         fn remove_user_or_group_from_role_wrong_user_group()
+         {
+             let mut rbac = RBAC::default();
+             rbac.add_user_or_group_to_role([1;32],[10;32]).unwrap();
+             rbac.add_user_or_group_to_role([1;32],[11;32]).unwrap();
+ 
+             let vec_roles = rbac.read_user_or_group_roles([1;32]);
+             assert_eq!(vec_roles.len(),2);
+ 
+             // delete user from group where group id is wrong
+             assert_eq!(
+                 rbac.remove_user_or_group_from_role([2;32],[10;32]),
+                 Err(Error::UserOrGroupDoesNotExist)
+             );
+         }
+ 
+         //remove_user_or_group_from_role_wrong_role() when wrong role id passed
+         #[ink::test]
+         fn remove_user_or_group_from_role_wrong_role()
+         {
+             let mut rbac = RBAC::default();
+             rbac.add_user_or_group_to_role([1;32],[10;32]).unwrap();
+             rbac.add_user_or_group_to_role([1;32],[11;32]).unwrap();
+ 
+             let vec_roles = rbac.read_user_or_group_roles([1;32]);
+             assert_eq!(vec_roles.len(),2);
+ 
+             // delete user from group where group id is wrong
+             assert_eq!(
+                 rbac.remove_user_or_group_from_role([1;32],[12;32]),
+                 Err(Error::RoleDoesNotExistForUserOrGroup)
+             );
+         }
+ 
+         #[ink::test]
+         fn read_user_or_group_roles_works()
+         {
+             let mut rbac = RBAC::default();
+             
+             // pass wrong group id
+             let vec_roles = rbac.read_user_or_group_roles([1;32]);
+             assert_eq!(vec_roles.len(),0);
+ 
+             rbac.add_user_or_group_to_role([1;32],[10;32]).unwrap();
+             rbac.add_user_or_group_to_role([1;32],[11;32]).unwrap();
+ 
+             let vec_roles = rbac.read_user_or_group_roles([1;32]);
+             assert_eq!(vec_roles.len(),2);
+         }
 
     }
 }
