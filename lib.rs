@@ -296,7 +296,7 @@ use ink_lang as ink;
             Ok(())
         }
           
-        // Read User/Group Roles
+        // Read Permission for Roles
         #[ink(message)]
         pub fn read_permissions(&mut self, role_did: [u8; 32]) ->Vec<[u8; 32]>
         {
@@ -374,7 +374,7 @@ use ink_lang as ink;
             let mut vec_users_in_group = rbac.read_user_group([1;32]);
             assert_eq!(vec_users_in_group.len(),3);
 
-            // delete user from group
+            // remove user from group
             assert_eq!(
                 rbac.remove_user_from_group([1;32],[4;32]),
                 Ok(())
@@ -397,7 +397,7 @@ use ink_lang as ink;
             let vec_users_in_group = rbac.read_user_group([1;32]);
             assert_eq!(vec_users_in_group.len(),2);
 
-            // delete user from group where group id is wrong
+            // remove user from group where group id is wrong
             assert_eq!(
                 rbac.remove_user_from_group([2;32],[4;32]),
                 Err(Error::GroupDoesNotExist)
@@ -415,7 +415,7 @@ use ink_lang as ink;
             let vec_users_in_group = rbac.read_user_group([1;32]);
             assert_eq!(vec_users_in_group.len(),2);
 
-            // delete user from group where group id is wrong
+            // remove user from group where group id is wrong
             assert_eq!(
                 rbac.remove_user_from_group([1;32],[4;32]),
                 Err(Error::UserDoesNotExistInGroup)
@@ -438,7 +438,7 @@ use ink_lang as ink;
             assert_eq!(vec_users_in_group.len(),2);
         }
 
-        // Assign single roles to single one/group: many to one
+        // Assign single roles to single user/group: one to one
         #[ink::test]
         fn assign_single_role_to_user_or_group()
         {
@@ -492,7 +492,7 @@ use ink_lang as ink;
             let mut vec_roles = rbac.read_user_or_group_roles([1;32]);
             assert_eq!(vec_roles.len(),3);
 
-            // delete user from group
+            // remove user/group from role
             assert_eq!(
                 rbac.remove_user_or_group_from_role([1;32],[12;32]),
                 Ok(())
@@ -515,7 +515,7 @@ use ink_lang as ink;
              let vec_roles = rbac.read_user_or_group_roles([1;32]);
              assert_eq!(vec_roles.len(),2);
  
-             // delete user from group where group id is wrong
+             // delete user/group from role where group id is wrong
              assert_eq!(
                  rbac.remove_user_or_group_from_role([2;32],[10;32]),
                  Err(Error::UserOrGroupDoesNotExist)
@@ -533,7 +533,7 @@ use ink_lang as ink;
              let vec_roles = rbac.read_user_or_group_roles([1;32]);
              assert_eq!(vec_roles.len(),2);
  
-             // delete user from group where group id is wrong
+             // remove user/group from role where role id is wrong
              assert_eq!(
                  rbac.remove_user_or_group_from_role([1;32],[12;32]),
                  Err(Error::RoleDoesNotExistForUserOrGroup)
@@ -545,7 +545,7 @@ use ink_lang as ink;
          {
              let mut rbac = RBAC::default();
              
-             // pass wrong group id
+             // pass wrong user/group id
              let vec_roles = rbac.read_user_or_group_roles([1;32]);
              assert_eq!(vec_roles.len(),0);
  
@@ -553,6 +553,125 @@ use ink_lang as ink;
              rbac.add_user_or_group_to_role([1;32],[11;32]).unwrap();
  
              let vec_roles = rbac.read_user_or_group_roles([1;32]);
+             assert_eq!(vec_roles.len(),2);
+         }
+
+         // Assign single permission to single role: one to one
+        #[ink::test]
+        fn assign_single_permission_to_role()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_role_to_permission([10;32],[20;32]).unwrap();
+
+            let vec_roles = rbac.read_permissions([10;32]);
+            assert_eq!(vec_roles.len(),1);
+
+        }
+
+        // Assign muliple permission to single role: many to one
+        #[ink::test]
+        fn assign_multiple_permission_to_role()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_role_to_permission([10;32],[20;32]).unwrap();
+            rbac.add_role_to_permission([10;32],[21;32]).unwrap();
+            rbac.add_role_to_permission([10;32],[22;32]).unwrap();
+
+            let vec_roles = rbac.read_permissions([10;32]);
+            assert_eq!(vec_roles.len(),3);
+
+        }
+
+        // Assign muliple permission to muliple role: many to many
+        #[ink::test]
+        fn assign_single_permission_to_multiple_role()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_role_to_permission([10;32],[20;32]).unwrap();
+            rbac.add_role_to_permission([11;32],[20;32]).unwrap();
+            rbac.add_role_to_permission([11;32],[21;32]).unwrap();
+
+            let vec_roles = rbac.read_permissions([10;32]);
+            assert_eq!(vec_roles.len(),1);
+
+            let vec_roles = rbac.read_permissions([11;32]);
+            assert_eq!(vec_roles.len(),2);
+
+        }
+
+        #[ink::test]
+        fn remove_role_from_permission_works()
+        {
+            let mut rbac = RBAC::default();
+            rbac.add_role_to_permission([10;32],[20;32]).unwrap();
+            rbac.add_role_to_permission([10;32],[21;32]).unwrap();
+            rbac.add_role_to_permission([10;32],[22;32]).unwrap();
+
+            let mut vec_roles = rbac.read_permissions([10;32]);
+            assert_eq!(vec_roles.len(),3);
+
+            // delete role from permission
+            assert_eq!(
+                rbac.remove_role_from_permission([10;32],[22;32]),
+                Ok(())
+            );
+
+            // new permission count should be reduced 
+            vec_roles = rbac.read_permissions([10;32]);
+            assert_eq!(vec_roles.len(),2)
+
+        }
+
+         //remove_remove_role_from_permission_wrong_role() when wrong role id passed
+         #[ink::test]
+         fn remove_role_from_permission_wrong_role()
+         {
+             let mut rbac = RBAC::default();
+             rbac.add_role_to_permission([10;32],[20;32]).unwrap();
+             rbac.add_role_to_permission([10;32],[21;32]).unwrap();
+ 
+             let vec_roles = rbac.read_permissions([10;32]);
+             assert_eq!(vec_roles.len(),2);
+ 
+             // delete role from permission where role id is wrong
+             assert_eq!(
+                 rbac.remove_role_from_permission([13;32],[20;32]),
+                 Err(Error::RoleDoesNotExist)
+             );
+         }
+ 
+         //remove_role_from_permission_wrong_permission() when wrong permission id passed
+         #[ink::test]
+         fn remove_role_from_permission_wrong_permission()
+         {
+             let mut rbac = RBAC::default();
+             rbac.add_role_to_permission([10;32],[20;32]).unwrap();
+             rbac.add_role_to_permission([10;32],[21;32]).unwrap();
+ 
+             let vec_roles = rbac.read_permissions([10;32]);
+             assert_eq!(vec_roles.len(),2);
+ 
+             // delete role from permission where permission id is wrong
+             assert_eq!(
+                 rbac.remove_role_from_permission([10;32],[22;32]),
+                 Err(Error::PermissionNotExistInRole)
+             );
+         }
+ 
+         #[ink::test]
+         fn read_permissions_works()
+         {
+             let mut rbac = RBAC::default();
+             
+             // pass wrong role id
+             let vec_roles = rbac.read_permissions([10;32]);
+             assert_eq!(vec_roles.len(),0);
+ 
+             rbac.add_role_to_permission([10;32],[20;32]).unwrap();
+             rbac.add_role_to_permission([10;32],[21;32]).unwrap();
+ 
+             // pass correct role id
+             let vec_roles = rbac.read_permissions([10;32]);
              assert_eq!(vec_roles.len(),2);
          }
 
