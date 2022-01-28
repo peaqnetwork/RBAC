@@ -25,7 +25,7 @@ In your project folder run in which you should see a successful test completion:
 
 3. Building Your Contract
 
-Run the following command to compile your smart contract in the Flipper project directory:
+Run the following command to compile your smart contract in the RBAC project directory:
 
     cargo +nightly contract build
 
