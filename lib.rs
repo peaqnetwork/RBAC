@@ -178,8 +178,7 @@ mod rbac {
         fn insert_group_has(&mut self, group_did: &GroupDID, user_did: &UserDID) ->Result<()> {
             let user_group = UserGroupEntity{ id: *user_did, is_group: false };
             if !self.map_group_has.contains_key(group_did) {
-                let mut vec_user_group = Vec::new();
-                vec_user_group.push(user_group);
+                let vec_user_group = vec![user_group];
                 self.map_group_has.insert(*group_did, vec_user_group);
                 return Ok(());
             }
@@ -193,8 +192,7 @@ mod rbac {
 
         fn insert_user_group_belongs(&mut self, user_group_entity: UserGroupEntity, group_did: &GroupDID) -> Result<()> {
             if !self.map_user_group_entity_belong.contains_key(&user_group_entity) {
-                let mut vec_group = Vec::new();
-                vec_group.push(*group_did);
+                let vec_group = vec![*group_did];
                 self.map_user_group_entity_belong.insert(user_group_entity, vec_group);
                 return Ok(());
             }
@@ -292,7 +290,7 @@ mod rbac {
                 return Vec::new();
             }
             self.map_user_group_entity_belong[user_group_entity].iter()
-                .map(|x| x.clone())
+                .copied()
                 .collect()
         }
 
@@ -302,8 +300,7 @@ mod rbac {
             let role = Role{id: role_did};
            
             if !self.map_user_group_to_role.contains_key(&user_or_group_did) {
-                let mut vec_role = Vec::new();
-                vec_role.push(role);
+                let vec_role = vec![role];
                 self.map_user_group_to_role.insert(user_or_group_did, vec_role);
                 return Ok(());
             }
@@ -328,7 +325,7 @@ mod rbac {
                 self.map_user_group_to_role[&user_or_group_did].remove(index);
                 Ok(())
             } else {
-                return Err(Error::RoleDoesNotExistForUserOrGroup)
+                Err(Error::RoleDoesNotExistForUserOrGroup)
             }
         }
 
@@ -349,20 +346,19 @@ mod rbac {
             vec_roles.append(&mut self.get_role(&user_or_group_did));
 
             // The User/Group DID isn't the same, so just try to get the roles
-            self.read_user_belongs(user_or_group_did.clone())
+            self.read_user_belongs(user_or_group_did)
                 .iter()
                 .for_each(|group| 
-                    vec_roles.append(&mut self.get_role(&group))
+                    vec_roles.append(&mut self.get_role(group))
             );
 
-            self.read_group_belongs(user_or_group_did.clone())
+            self.read_group_belongs(user_or_group_did)
                 .iter()
                 .for_each(|group| 
-                    vec_roles.append(&mut self.get_role(&group))
+                    vec_roles.append(&mut self.get_role(group))
             );
 
             vec_roles.into_iter()
-                .map(|x| x)
                 .collect::<HashSet<_>>()
                 .into_iter()
                 .collect()
@@ -375,8 +371,7 @@ mod rbac {
             let permission = Permission{ id: permission_did};
            
             if !self.map_role_to_permission.contains_key(&role_did) {
-                let mut vec_permission = Vec::new();
-                vec_permission.push(permission);
+                let vec_permission = vec![permission];
                 self.map_role_to_permission.insert(role_did, vec_permission);
                 return Ok(());
             }
@@ -418,7 +413,7 @@ mod rbac {
 
         #[ink(message)]
         pub fn check_access(&mut self, user_did: UserDID, permission_did: PermissionDID) -> bool {
-            self.read_user_or_group_roles(user_did.clone())
+            self.read_user_or_group_roles(user_did)
                 .iter()
                 .any(|&role| {
                     self.read_permissions(role).contains(&permission_did)
