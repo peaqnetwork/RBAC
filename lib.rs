@@ -5,7 +5,6 @@ use ink_lang as ink;
 #[ink::contract]
 mod rbac {
     use ink_prelude::vec::Vec;
-    use ink_prelude::collections::HashSet;
     use ink_storage::{
         traits::{
             PackedLayout,
@@ -14,6 +13,8 @@ mod rbac {
         },
     };
     use ink_storage::collections::HashMap;
+    use ink_prelude::collections::BTreeSet;
+    use ink_prelude::vec;
 
     type DIDType = [u8; 32];
 
@@ -24,15 +25,13 @@ mod rbac {
     type PermissionDID = DIDType;
  
 
-    #[derive(scale::Encode, scale::Decode, Clone, SpreadLayout, PackedLayout,Default)]
+    #[derive(
+        scale::Encode, scale::Decode, Clone, SpreadLayout,
+        PackedLayout, Default, Ord, PartialOrd, Eq, PartialEq)]
     #[cfg_attr(
         feature = "std",
         derive(
             Debug,
-            PartialEq,
-            PartialOrd,
-            Ord,
-            Eq,
             scale_info::TypeInfo,
             ink_storage::traits::StorageLayout
         )
@@ -44,15 +43,11 @@ mod rbac {
     }
 
 
-    #[derive(scale::Encode, scale::Decode, Clone, SpreadLayout, PackedLayout,Default)]
+    #[derive(scale::Encode, scale::Decode, Clone, SpreadLayout, PackedLayout, Default, PartialEq, Eq)]
     #[cfg_attr(
         feature = "std",
         derive(
             Debug,
-            PartialEq,
-            PartialOrd,
-            Ord,
-            Eq,
             scale_info::TypeInfo,
             ink_storage::traits::StorageLayout
         )
@@ -62,15 +57,11 @@ mod rbac {
     }
 
 
-    #[derive(scale::Encode, scale::Decode, Clone, SpreadLayout, PackedLayout,Default)]
+    #[derive(scale::Encode, scale::Decode, Clone, SpreadLayout, PackedLayout, Default, PartialEq, Eq)]
     #[cfg_attr(
         feature = "std",
         derive(
             Debug,
-            PartialEq,
-            PartialOrd,
-            Ord,
-            Eq,
             scale_info::TypeInfo,
             ink_storage::traits::StorageLayout
         )
@@ -264,7 +255,7 @@ mod rbac {
         // GroupsDID has UserDID1, UserDID2
         // Return UserDID1, UserDID2
         #[ink(message)]
-        pub fn read_user_group(&mut self, group_did: GroupDID) -> Vec<UserDID> {
+        pub fn read_user_group(&self, group_did: GroupDID) -> Vec<UserDID> {
             if !self.map_group_has.contains_key(&group_did) {
                 return Vec::new();
             }
@@ -275,17 +266,17 @@ mod rbac {
                 .collect()
         }
 
-        fn read_user_belongs(&mut self, user_did: UserDID) -> Vec<GroupDID> {
+        fn read_user_belongs(&self, user_did: UserDID) -> Vec<GroupDID> {
             let user_entity = UserGroupEntity{ id: user_did, is_group: false };
             self.read_user_group_entity_belongs(&user_entity)
         }
 
-        fn read_group_belongs(&mut self, group_did: GroupDID) -> Vec<GroupDID> {
+        fn read_group_belongs(&self, group_did: GroupDID) -> Vec<GroupDID> {
             let group_entity = UserGroupEntity{ id: group_did, is_group: true };
             self.read_user_group_entity_belongs(&group_entity)
         }
 
-        fn read_user_group_entity_belongs(&mut self, user_group_entity: &UserGroupEntity) -> Vec<GroupDID> {
+        fn read_user_group_entity_belongs(&self, user_group_entity: &UserGroupEntity) -> Vec<GroupDID> {
             if !self.map_user_group_entity_belong.contains_key(user_group_entity) {
                 return Vec::new();
             }
@@ -329,7 +320,7 @@ mod rbac {
             }
         }
 
-        fn get_role(&mut self, user_or_group_did: &UserGroupDID) -> Vec<RoleDID>{
+        fn get_role(&self, user_or_group_did: &UserGroupDID) -> Vec<RoleDID>{
             if self.map_user_group_to_role.contains_key(user_or_group_did) {
                 self.map_user_group_to_role[user_or_group_did].iter()
                     .map(|role| role.id)
@@ -341,7 +332,7 @@ mod rbac {
 
         // Read User/Group Roles
         #[ink(message)]
-        pub fn read_user_or_group_roles(&mut self, user_or_group_did: UserGroupDID) ->Vec<RoleDID> {
+        pub fn read_user_or_group_roles(&self, user_or_group_did: UserGroupDID) ->Vec<RoleDID> {
             let mut vec_roles = Vec::new();
             vec_roles.append(&mut self.get_role(&user_or_group_did));
 
@@ -359,7 +350,7 @@ mod rbac {
             );
 
             vec_roles.into_iter()
-                .collect::<HashSet<_>>()
+                .collect::<BTreeSet<_>>()
                 .into_iter()
                 .collect()
         }
@@ -400,7 +391,7 @@ mod rbac {
           
         // Read Permission for Roles
         #[ink(message)]
-        pub fn read_permissions(&mut self, role_did: RoleDID) ->Vec<PermissionDID> {
+        pub fn read_permissions(&self, role_did: RoleDID) ->Vec<PermissionDID> {
             if self.map_role_to_permission.contains_key(&role_did) {
                 self.map_role_to_permission[&role_did]
                     .iter()
@@ -412,7 +403,7 @@ mod rbac {
         }
 
         #[ink(message)]
-        pub fn check_access(&mut self, user_did: UserDID, permission_did: PermissionDID) -> bool {
+        pub fn check_access(&self, user_did: UserDID, permission_did: PermissionDID) -> bool {
             self.read_user_or_group_roles(user_did)
                 .iter()
                 .any(|&role| {
