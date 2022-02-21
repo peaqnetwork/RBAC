@@ -38,7 +38,7 @@ mod rbac {
     )]
     pub struct UserGroupEntity {
         id: UserGroupDID,
-        // In MVP1, we don't use is_group. Because groups cannot have the other groups now.
+        // Currently, we don't use is_group. Because groups cannot have the other groups now.
         is_group: bool,
     }
 
@@ -80,7 +80,7 @@ mod rbac {
         // For example:
         // GroupDID has UserDID1, UserDID2
 
-        // However, in MVPv1, only the type of user can add into the group,
+        // However, currently, only the type of user can add into the group,
         // but the type of group cannot add into the group.
         // Therefore, all UserGroupEntities are user and we don't support the below example,
         // GroupDID has GroupDID2
