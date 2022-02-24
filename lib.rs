@@ -11,10 +11,9 @@ mod rbac {
             SpreadAllocate,
             SpreadLayout,
         },
+        Mapping,
     };
-    use ink_storage::collections::HashMap;
     use ink_prelude::collections::BTreeSet;
-    use ink_prelude::vec;
 
     type DIDType = [u8; 32];
 
@@ -84,7 +83,7 @@ mod rbac {
         // but the type of group cannot add into the group.
         // Therefore, all UserGroupEntities are user and we don't support the below example,
         // GroupDID has GroupDID2
-        map_group_has: HashMap<GroupDID, Vec<UserGroupEntity>>,
+        map_group_has: Mapping<GroupDID, Vec<UserGroupEntity>>,
 
         // map_user_group_entity_belong : key - UserGroupEntity, value- Vec<GroupDID>
         // This map is to let us find roles easily
@@ -93,13 +92,13 @@ mod rbac {
         // > GroupDID has UserDID1
         // > GroupDID3 has UserDID1
         // UserDID1 belongs to GroupDID, GroupDID3
-        map_user_group_entity_belong: HashMap<UserGroupEntity, Vec<GroupDID>>,
+        map_user_group_entity_belong: Mapping<UserGroupEntity, Vec<GroupDID>>,
 
         // map_user_group_to_role : key - GroupDID/UserDID, value- Vec<Role>
-        map_user_group_to_role: HashMap<UserGroupDID, Vec<Role>>,
+        map_user_group_to_role: Mapping<UserGroupDID, Vec<Role>>,
 
         // map_role_to_permission : key - RoleDID, value- Vec<Permission>
-        map_role_to_permission: HashMap<RoleDID, Vec<Permission>>,
+        map_role_to_permission: Mapping<RoleDID, Vec<Permission>>,
     }
 
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -153,46 +152,32 @@ mod rbac {
             ink_lang::codegen::initialize_contract(|_| {})
         }
 
-        /// Constructors can delegate to other constructors.
-        #[ink(constructor)]
+        #[ink(constructor, payable)]
         pub fn default() -> Self 
         {
-            RBAC 
-            {
-                map_group_has: HashMap::new(),
-                map_user_group_entity_belong: HashMap::new(),
-                map_user_group_to_role: HashMap::new(),
-                map_role_to_permission: HashMap::new(),
-            }
+            ink_lang::codegen::initialize_contract(|_| {})
         }
 
         fn insert_group_has(&mut self, group_did: &GroupDID, user_did: &UserDID) ->Result<()> {
             let user_group = UserGroupEntity{ id: *user_did, is_group: false };
-            if !self.map_group_has.contains_key(group_did) {
-                let vec_user_group = vec![user_group];
-                self.map_group_has.insert(*group_did, vec_user_group);
-                return Ok(());
-            }
-
-            if self.map_group_has[group_did].contains(&user_group) {
+            let mut vec_user_group = 
+                self.map_group_has.get(&group_did).unwrap_or_else(Vec::new);
+            if vec_user_group.contains(&user_group) {
                 return Err(Error::GroupHasUserOrGroupAlready);
             }
-            self.map_group_has[group_did].push(user_group);
+            vec_user_group.push(user_group);
+            self.map_group_has.insert(*group_did, &vec_user_group);
             Ok(())
         }
 
         fn insert_user_group_belongs(&mut self, user_group_entity: UserGroupEntity, group_did: &GroupDID) -> Result<()> {
-            if !self.map_user_group_entity_belong.contains_key(&user_group_entity) {
-                let vec_group = vec![*group_did];
-                self.map_user_group_entity_belong.insert(user_group_entity, vec_group);
-                return Ok(());
-            }
-
-            if self.map_user_group_entity_belong[&user_group_entity].contains(group_did) {
+            let mut vec_group = 
+                self.map_user_group_entity_belong.get(&user_group_entity).unwrap_or_else(Vec::new);
+            if vec_group.contains(group_did) {
                 return Err(Error::UserOrGroupBelongsGroupAlready);
             }
-
-            self.map_user_group_entity_belong[&user_group_entity].push(*group_did);
+            vec_group.push(*group_did);
+            self.map_user_group_entity_belong.insert(&user_group_entity, &vec_group);
             Ok(())
         }
 
@@ -201,12 +186,12 @@ mod rbac {
         pub fn add_user_to_group(&mut self, user_did: UserDID, group_did: GroupDID) -> Result<()> {
             if group_did == user_did ||
                 // user_did is the same as group id
-                self.map_group_has.contains_key(&user_did) ||
+                self.map_group_has.get(&user_did).is_some() ||
                 // group id is the same as user id
-                self.map_user_group_entity_belong.contains_key(&UserGroupEntity {
+                self.map_user_group_entity_belong.get(&UserGroupEntity {
                     id: group_did,
                     is_group: false
-            }) {
+            }).is_some() {
                 return Err(Error::UserGroupAreSame);
             }
 
@@ -216,29 +201,29 @@ mod rbac {
         }
 
         fn remove_group_has(&mut self, group_did: &GroupDID, user_did: &UserDID) -> Result<()> {
-            if !self.map_group_has.contains_key(group_did) {
-                return Err(Error::GroupDoesNotExist)
-            }
-
-            if let Some(index) = self.map_group_has[group_did].iter().position(|r| r.id == *user_did) {
-                self.map_group_has[group_did].remove(index);
-            } else {
-                return Err(Error::UserOrGroupDoesNotExistInGroup)
-            }
+            let mut groups = self.map_group_has
+                .get(group_did)
+                .ok_or(Error::GroupDoesNotExist)?;
+            let index = groups
+                .iter()
+                .position(|r| r.id == *user_did)
+                .ok_or(Error::UserOrGroupDoesNotExistInGroup)?;
+            groups.remove(index);
+            self.map_group_has.insert(group_did, &groups);
             Ok(())
         }
 
         fn remove_user_group_belongs(&mut self, user_did: &UserDID, group_did: &GroupDID) -> Result<()> {
             let user = UserGroupEntity{ id: *user_did, is_group: false };
-            if !self.map_user_group_entity_belong.contains_key(&user) {
-                return Err(Error::UserOrGroupDoesNotExist)
-            }
-
-            if let Some(index) = self.map_user_group_entity_belong[&user].iter().position(|r| *r == *group_did) {
-                self.map_user_group_entity_belong[&user].remove(index);
-            } else {
-                return Err(Error::GroupDoesNotExistInUserGroup)
-            }
+            let mut groups = self.map_user_group_entity_belong
+                .get(&user)
+                .ok_or(Error::UserOrGroupDoesNotExist)?;
+            let index = groups
+                .iter()
+                .position(|r| *r == *group_did)
+                .ok_or(Error::GroupDoesNotExistInUserGroup)?;
+            groups.remove(index);
+            self.map_user_group_entity_belong.insert(&user, &groups);
             Ok(())
         }
 
@@ -256,11 +241,7 @@ mod rbac {
         // Return UserDID1, UserDID2
         #[ink(message)]
         pub fn read_user_group(&self, group_did: GroupDID) -> Vec<UserDID> {
-            if !self.map_group_has.contains_key(&group_did) {
-                return Vec::new();
-            }
-
-            self.map_group_has[&group_did]
+            self.map_group_has.get(&group_did).unwrap_or_else(Vec::new)
                 .iter()
                 .map(|user| user.id)
                 .collect()
@@ -277,10 +258,8 @@ mod rbac {
         }
 
         fn read_user_group_entity_belongs(&self, user_group_entity: &UserGroupEntity) -> Vec<GroupDID> {
-            if !self.map_user_group_entity_belong.contains_key(user_group_entity) {
-                return Vec::new();
-            }
-            self.map_user_group_entity_belong[user_group_entity].iter()
+            self.map_user_group_entity_belong.get(user_group_entity).unwrap_or_else(Vec::new)
+                .iter()
                 .copied()
                 .collect()
         }
@@ -289,45 +268,35 @@ mod rbac {
         #[ink(message)]
         pub fn add_user_or_group_to_role(&mut self, user_or_group_did: UserGroupDID, role_did: RoleDID) -> Result<()> {
             let role = Role{id: role_did};
-           
-            if !self.map_user_group_to_role.contains_key(&user_or_group_did) {
-                let vec_role = vec![role];
-                self.map_user_group_to_role.insert(user_or_group_did, vec_role);
-                return Ok(());
-            }
-
-            if self.map_user_group_to_role[&user_or_group_did].contains(&role) {
+            let mut vec_role = self.map_user_group_to_role.get(&user_or_group_did).unwrap_or_else(Vec::new);
+            if vec_role.contains(&role) {
                 return Err(Error::UserOrGroupHasRoleAlready);
             }
-
-            self.map_user_group_to_role[&user_or_group_did].push(role);
+            vec_role.push(role);
+            self.map_user_group_to_role.insert(user_or_group_did, &vec_role);
             Ok(())
         }
 
         // Remove User or Group from the Role
         #[ink(message)]
         pub fn remove_user_or_group_from_role(&mut self, user_or_group_did: UserGroupDID, role_did: RoleDID) -> Result<()> {
-            if !self.map_user_group_to_role.contains_key(&user_or_group_did) {
-                return Err(Error::UserOrGroupDoesNotExist)
-            }
-            if let Some(index) = self.map_user_group_to_role[&user_or_group_did]
+            let mut roles = self.map_user_group_to_role
+                .get(&user_or_group_did)
+                .ok_or(Error::UserOrGroupDoesNotExist)?;
+            let index = roles
                 .iter()
-                .position(|r| r.id == role_did) {
-                self.map_user_group_to_role[&user_or_group_did].remove(index);
-                Ok(())
-            } else {
-                Err(Error::RoleDoesNotExistForUserOrGroup)
-            }
+                .position(|r| r.id == role_did)
+                .ok_or(Error::RoleDoesNotExistForUserOrGroup)?;
+            roles.remove(index);
+            self.map_user_group_to_role.insert(&user_or_group_did, &roles);
+            Ok(())
         }
 
         fn get_role(&self, user_or_group_did: &UserGroupDID) -> Vec<RoleDID>{
-            if self.map_user_group_to_role.contains_key(user_or_group_did) {
-                self.map_user_group_to_role[user_or_group_did].iter()
-                    .map(|role| role.id)
-                    .collect()
-            } else {
-                Vec::<RoleDID>::new()
-            }
+            self.map_user_group_to_role.get(user_or_group_did).unwrap_or_else(Vec::new)
+                .iter()
+                .map(|role| role.id)
+                .collect()
         }
 
         // Read User/Group Roles
@@ -360,46 +329,37 @@ mod rbac {
         #[ink(message)]
         pub fn add_role_to_permission(&mut self, role_did: RoleDID, permission_did: PermissionDID) -> Result<()> {
             let permission = Permission{ id: permission_did};
-           
-            if !self.map_role_to_permission.contains_key(&role_did) {
-                let vec_permission = vec![permission];
-                self.map_role_to_permission.insert(role_did, vec_permission);
-                return Ok(());
-            }
-            if self.map_role_to_permission[&role_did].contains(&permission) {
+            let mut vec_permission = self.map_role_to_permission.get(&role_did).unwrap_or_else(Vec::new);
+
+            if vec_permission.contains(&permission) {
                 return Err(Error::RoleHasPermissionAlready);
             }
-            self.map_role_to_permission[&role_did].push(permission);
+            vec_permission.push(permission);
+            self.map_role_to_permission.insert(role_did, &vec_permission);
             Ok(())
         }
 
         // Remove Role from the Permission
         #[ink(message)]
         pub fn remove_role_from_permission(&mut self, role_did: RoleDID, permission_did: PermissionDID) -> Result<()> {
-            if !self.map_role_to_permission.contains_key(&role_did) {
-                return Err(Error::RoleDoesNotExist)
-            }
-            if let Some(index) = self.map_role_to_permission[&role_did]
+            let mut perms = self.map_role_to_permission.get(&role_did).ok_or(Error::RoleDoesNotExist)?;
+            let index = perms
                 .iter()
-                .position(|r| r.id == permission_did) {
-                self.map_role_to_permission[&role_did].remove(index);
-            } else {
-                return Err(Error::PermissionNotExistInRole)
-            }
+                .position(|r| r.id == permission_did)
+                .ok_or(Error::PermissionNotExistInRole)?;
+
+            perms.remove(index);
+            self.map_role_to_permission.insert(&role_did, &perms);
             Ok(())
         }
           
         // Read Permission for Roles
         #[ink(message)]
         pub fn read_permissions(&self, role_did: RoleDID) ->Vec<PermissionDID> {
-            if self.map_role_to_permission.contains_key(&role_did) {
-                self.map_role_to_permission[&role_did]
-                    .iter()
-                    .map(|x| x.id )
-                    .collect()
-            }  else {
-                Vec::<PermissionDID>::new()
-            }
+            self.map_role_to_permission.get(&role_did).unwrap_or_else(Vec::new)
+                .iter()
+                .map(|x| x.id )
+                .collect()
         }
 
         #[ink(message)]
