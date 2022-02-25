@@ -94,6 +94,8 @@ The deployed data and the relationship are below
 | role | AccessToOffice | 0x1122334455667788990011223344556677889900112233445566778899000020 |
 | permission | GrantMainDoorUnlock | 0x1122334455667788990011223344556677889900112233445566778899000031 |
 
+```
 `PeaqOffice` has two users, `Tanisha` and `Anton`.
 `Leo` and `PeaqOffice` are assigned to the role, `AccessToOffice`.
 `AccessToOffice` has the `GrantMainDoorUnlock` permission.
+```
