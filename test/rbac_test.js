@@ -1,4 +1,3 @@
-// Required imports
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { Keyring } = require('@polkadot/keyring');
 const { CodePromise, ContractPromise } = require('@polkadot/api-contract');

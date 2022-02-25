@@ -2,11 +2,7 @@
   "name": "rbac-test",
   "version": "1.0.0",
   "description": "RBAC behavior test",
-  "main": "rbac_test.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
+  "author": "[Jay] <[pan@peaq.io]>",
   "license": "ISC",
   "dependencies": {
     "@polkadot/api": "^7.9.1",

@@ -65,3 +65,20 @@ Start a Substrate Smart Contracts node and configure the Canvas UI to interact w
 Deploying a Smart Contract:
 
     https://docs.substrate.io/tutorials/v3/ink-workshop/pt1/#deploying-your-contract
+
+
+## Testing
+We can run the behavior test in the test folder to check RBAC can work efficiently. Please follow the below instruction.
+```
+cd test
+npm install
+node rbac_test.js
+```
+
+## Seed Data
+Another script in the test folder is the rbac_deploy script. It'll help to deploy the fake data for checking on polkadot.js UI.
+```
+cd test
+npm install
+node rbac_deploy.js
+```
