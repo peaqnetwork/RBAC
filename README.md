@@ -83,7 +83,7 @@ npm install
 node rbac_deploy.js
 ```
 
-The deployed data are below
+The deployed data and the relationship are below
 | Type | Name | DID |
 | ---- | ---- | --- |
 | group | PeaqOffice | 0x1122334455667788990011223344556677889900112233445566778899000010 |
@@ -93,3 +93,7 @@ The deployed data are below
 | user | Maryna | 0x1122334455667788990011223344556677889900112233445566778899000003 |
 | role | AccessToOffice | 0x1122334455667788990011223344556677889900112233445566778899000020 |
 | permission | GrantMainDoorUnlock | 0x1122334455667788990011223344556677889900112233445566778899000031 |
+
+`PeaqOffice` has two users, `Tanisha` and `Anton`.
+`Leo` and `PeaqOffice` are assigned to the role, `AccessToOffice`.
+`AccessToOffice` has the `GrantMainDoorUnlock` permission.
