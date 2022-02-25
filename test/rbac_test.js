@@ -5,7 +5,7 @@ const fs = require('fs');
 const assert = require('assert').strict;
 const yargs = require('yargs/yargs');
 
-const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:9944a';
+const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:9944';
 const RBAC_CONTRACT_PATH = '../target/ink/rbac.contract';
 const WAIT_TIME = 13000;
 
