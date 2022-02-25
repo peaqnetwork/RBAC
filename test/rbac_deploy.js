@@ -3,8 +3,9 @@ const { Keyring } = require('@polkadot/keyring');
 const { CodePromise, ContractPromise } = require('@polkadot/api-contract');
 const fs = require('fs');
 const assert = require('assert').strict;
+const yargs = require('yargs/yargs');
 
-const NODE_WS_URL = 'ws://127.0.0.1:9944';
+const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:9944a';
 const RBAC_CONTRACT_PATH = '../target/ink/rbac.contract';
 const WAIT_TIME = 13000;
 
@@ -27,9 +28,9 @@ const PERMS = {
     GrantMainDoorUnlock: '0x1122334455667788990011223344556677889900112233445566778899000031',
 };
 
-async function main() {
+async function main(nodeWSUrL) {
     // Initialise the provider to connect to the local node
-    const provider = new WsProvider(NODE_WS_URL);
+    const provider = new WsProvider(nodeWSUrL);
 
     // Create the API and wait until ready
     const api = await ApiPromise.create({
@@ -180,4 +181,18 @@ async function main() {
     console.log(`---------------- Contract address: ${addr.toString()} ------------------`);
 }
 
-main().catch(console.error).finally(() => process.exit());
+
+const { argv } = yargs(process.argv.slice(2))
+    .usage('Usage: $0 --node_ws URL [options]')
+    .example('$0 --node_ws wss://127.0.0.1:9944', 'Start to deploy')
+    .option('node_ws', {
+        describe: 'The width of the area.',
+        type: 'string',
+        nargs: 1,
+    })
+    .describe('help', 'Show help.') // Override --help usage message.
+    .describe('version', 'Show version number.');
+
+const nodeWSUrL = argv.node_ws || DEFAULT_NODE_WS_URL;
+
+main(nodeWSUrL).catch(console.error).finally(() => process.exit());
