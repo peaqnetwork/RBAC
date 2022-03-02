@@ -80,7 +80,9 @@ Another script in the test folder is the rbac_deploy script. It'll help to deplo
 ```
 cd test
 npm install
-node rbac_deploy.js
+
+npm run test
+npm run deploy
 ```
 
 The deployed data and the relationship are below

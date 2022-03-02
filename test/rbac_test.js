@@ -327,6 +327,7 @@ async function main(nodeWSUrL) {
         PERM_ADDRS[0],
     );
     assert.equal(callValue.output.valueOf(), false);
+    api.disconnect();
 }
 
 const { argv } = yargs(process.argv.slice(2))

@@ -177,6 +177,7 @@ async function main(nodeWSUrL) {
         PERMS.GrantMainDoorUnlock,
     );
     assert.equal(callValue.output.valueOf(), false);
+    api.disconnect();
 
     console.log(`---------------- Contract address: ${addr.toString()} ------------------`);
 }
