@@ -65,3 +65,39 @@ Start a Substrate Smart Contracts node and configure the Canvas UI to interact w
 Deploying a Smart Contract:
 
     https://docs.substrate.io/tutorials/v3/ink-workshop/pt1/#deploying-your-contract
+
+
+## Testing
+We can run the behavior test in the test folder to check RBAC can work efficiently. Please follow the below instruction.
+```
+cd test
+npm install
+node rbac_test.js
+```
+
+## Seed Data
+Another script in the test folder is the rbac_deploy script. It'll help to deploy the fake data for checking on polkadot.js UI.
+```
+cd test
+npm install
+
+npm run test
+npm run deploy
+```
+
+The deployed data and the relationship are below
+| Type | Name | DID |
+| ---- | ---- | --- |
+| group | PeaqOffice | 0x1122334455667788990011223344556677889900112233445566778899000010 |
+| user | Tanisha | 0x1122334455667788990011223344556677889900112233445566778899000000 |
+| user | Leo | 0x1122334455667788990011223344556677889900112233445566778899000001 |
+| user | Anton | 0x1122334455667788990011223344556677889900112233445566778899000002 |
+| user | Maryna | 0x1122334455667788990011223344556677889900112233445566778899000003 |
+| role | AccessToOffice | 0x1122334455667788990011223344556677889900112233445566778899000020 |
+| permission | GrantMainDoorUnlock | 0x1122334455667788990011223344556677889900112233445566778899000031 |
+
+```
+`PeaqOffice` has two users, `Tanisha` and `Anton`.
+`Leo` and `PeaqOffice` are assigned to the role, `AccessToOffice`.
+`AccessToOffice` has the `GrantMainDoorUnlock` permission.
+```

@@ -1,0 +1,18 @@
+{
+  "name": "rbac-test",
+  "version": "1.0.0",
+  "description": "RBAC behavior test",
+  "author": "[Jay] <[pan@peaq.io]>",
+  "license": "ISC",
+  "dependencies": {
+    "@polkadot/api": "^7.9.1",
+    "@polkadot/api-contract": "^7.9.1",
+    "@polkadot/keyring": "^8.4.1",
+    "yargs": "^17.3.1"
+  },
+  "scripts": {
+    "start": "node rbac_deploy.js && node rbac_test.js",
+    "deploy": "node rbac_deploy.js",
+    "test": "node rbac_test.js"
+  }
+}
