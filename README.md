@@ -67,15 +67,15 @@ Deploying a Smart Contract:
     https://docs.substrate.io/tutorials/v3/ink-workshop/pt1/#deploying-your-contract
 
 ## Docker
-We can use Docker to build and test this contract; please follow the below commands. The contract files are under the folder, `target/ink/`.
+We can use Docker image to build and test this contract; please follow the below commands. The contract files are under the folder, `target/ink/`.
 ```
 cd build-image
 sh build-container.sh
 cd ..
 # Build
-docker run --rm -it -v $(pwd):/sources cargo-contract-stable:ubuntu-20.04 cargo +nightly contract build --manifest-path=/sources/Cargo.toml
+docker run --rm -it -v $(pwd):/sources rust-stable:ubuntu-20.04 cargo +nightly contract build --manifest-path=/sources/Cargo.toml
 # Test
-docker run --rm -it -v $(pwd):/sources cargo-contract-stable:ubuntu-20.04 cargo +nightly contract test --manifest-path=/sources/Cargo.toml
+docker run --rm -it -v $(pwd):/sources rust-stable:ubuntu-20.04 cargo +nightly contract test --manifest-path=/sources/Cargo.toml
 ```
 
 ## Testing
