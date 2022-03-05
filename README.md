@@ -3,7 +3,7 @@ Smart contract based on Substrate INK
 
 Implementation of Roles bases access control
 
-1.Contract Source Code
+## Contract Source Code
 The ink! CLI works with the source code for the "RBAC" contract for Role Based Access Control. 
 
 The RBAC contract have below mentioned facilities;
@@ -15,7 +15,7 @@ The RBAC contract have below mentioned facilities;
     
     Check Access if particular User have certain permission
     
-2.Testing Your Contract
+## Testing Your Contract
 
 You will see at the bottom of the source code there are simple test cases which verify the functionality of the contract. We can quickly test this code is functioning as expected using the off-chain test environment that ink! provides.
 
@@ -23,7 +23,7 @@ In your project folder run in which you should see a successful test completion:
 
     cargo +nightly test
 
-3. Building Your Contract
+## Building Your Contract
 
 Run the following command to compile your smart contract in the RBAC project directory:
 
@@ -66,14 +66,24 @@ Deploying a Smart Contract:
 
     https://docs.substrate.io/tutorials/v3/ink-workshop/pt1/#deploying-your-contract
 
+## Docker
+We can use Docker image to build and test this contract; please follow the below commands. The contract files are under the folder, `target/ink/`.
+```
+# Build
+docker run --rm -it -v $(pwd):/sources rust-stable:ubuntu-20.04 cargo +nightly contract build --manifest-path=/sources/Cargo.toml
+# Test
+docker run --rm -it -v $(pwd):/sources rust-stable:ubuntu-20.04 cargo +nightly contract test --manifest-path=/sources/Cargo.toml
+```
 
 ## Testing
 We can run the behavior test in the test folder to check RBAC can work efficiently. Please follow the below instruction.
 ```
 cd test
 npm install
-node rbac_test.js
+
+npm run test
 ```
+However, before you run the scripts, you have to generate the ink contract file in advance.
 
 ## Seed Data
 Another script in the test folder is the rbac_deploy script. It'll help to deploy the fake data for checking on polkadot.js UI.
@@ -81,9 +91,10 @@ Another script in the test folder is the rbac_deploy script. It'll help to deplo
 cd test
 npm install
 
-npm run test
 npm run deploy
 ```
+
+However, before you run the scripts, you have to generate the ink contract file in advance.
 
 The deployed data and the relationship are below
 | Type | Name | DID |
