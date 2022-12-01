@@ -70,9 +70,9 @@ Deploying a Smart Contract:
 We can use Docker image to build and test this contract; please follow the below commands. The contract files are under the folder, `target/ink/`.
 ```
 # Build
-docker run --rm -it -v $(pwd):/sources rust-stable:ubuntu-20.04 cargo +nightly contract build --manifest-path=/sources/Cargo.toml
+docker run --rm -it -v $(pwd):/sources -w /sources rust-stable:ubuntu-20.04 cargo +nightly contract build
 # Test
-docker run --rm -it -v $(pwd):/sources rust-stable:ubuntu-20.04 cargo +nightly contract test --manifest-path=/sources/Cargo.toml
+docker run --rm -it -v $(pwd):/sources -w /sources rust-stable:ubuntu-20.04 cargo +nightly contract test
 ```
 
 ## Testing

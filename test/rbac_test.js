@@ -7,7 +7,7 @@ const yargs = require('yargs/yargs');
 
 const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:9944';
 const RBAC_CONTRACT_PATH = '../target/ink/rbac.contract';
-const WAIT_TIME = 13000;
+const WAIT_TIME = 38000;
 
 
 const USER_ADDRS = [
@@ -85,7 +85,7 @@ async function main(nodeWSUrL) {
     console.log('----- Test Deploy');
     let addr;
     await contractTransaction(
-        code.tx.default({ gasLimit: 100000 * 1000000 }),
+        code.tx.default({ gasLimit: 100000 * 100000, value: 0 }),
         alice,
         (result) => { addr = result.contract.address; },
     );
