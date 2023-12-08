@@ -4,10 +4,15 @@ const { CodePromise, ContractPromise } = require('@polkadot/api-contract');
 const fs = require('fs');
 const assert = require('assert').strict;
 const yargs = require('yargs/yargs');
+const { BN, BN_ONE } = require('@polkadot/util');
+const { WeightV2 } = require('@polkadot/types/interfaces');
 
-const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:9944';
+const MAX_CALL_WEIGHT = new BN(50_000_000_000).isub(BN_ONE);
+const PROOFSIZE = new BN(2_000_000);
+
+const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:10044';
 const RBAC_CONTRACT_PATH = '../target/ink/rbac.contract';
-const WAIT_TIME = 13000;
+const WAIT_TIME = 38000;
 
 const GROUPS = {
     PeaqOffice: '0x1122334455667788990011223344556677889900112233445566778899000010',
@@ -36,6 +41,15 @@ async function main(nodeWSUrL) {
     const api = await ApiPromise.create({
         provider,
     });
+
+    const GAS_LIMIT = {
+        gasLimit: api?.registry.createType('WeightV2', {
+            refTime: MAX_CALL_WEIGHT,
+            proofSize: PROOFSIZE,
+        }),
+        storageDepositLimit: 5000000000000000,
+        value: 0,
+    };
 
     const doNothingFunc = (result) => {}; // eslint-disable-line
     async function contractTransaction(contractAPI, signer, callback = doNothingFunc) {
@@ -80,7 +94,7 @@ async function main(nodeWSUrL) {
     console.log('----- Deploy new smart contract');
     let addr;
     await contractTransaction(
-        code.tx.default({ gasLimit: 100000 * 1000000 }),
+        code.tx.default(GAS_LIMIT),
         alice,
         (result) => { addr = result.contract.address; },
     );
@@ -89,7 +103,7 @@ async function main(nodeWSUrL) {
 
     await contractTransaction(
         contract.tx.addUserToGroup(
-            { value: 0, gasLimit: 100000 * 1000000 },
+            GAS_LIMIT,
             EMPLOYEES.Tanisha, GROUPS.PeaqOffice,
         ),
         alice,
@@ -97,7 +111,7 @@ async function main(nodeWSUrL) {
 
     await contractTransaction(
         contract.tx.addUserToGroup(
-            { value: 0, gasLimit: 100000 * 1000000 },
+            GAS_LIMIT,
             EMPLOYEES.Anton, GROUPS.PeaqOffice,
         ),
         alice,
@@ -107,7 +121,7 @@ async function main(nodeWSUrL) {
     let callValue = [];
     callValue = await contract.query.readUserGroup(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         GROUPS.PeaqOffice,
     );
     assert.equal(callValue.output.length, 2);
@@ -118,7 +132,7 @@ async function main(nodeWSUrL) {
     // UserGroup assign role
     await contractTransaction(
         contract.tx.addUserOrGroupToRole(
-            { value: 0, gasLimit: 100000 * 1000000 },
+            GAS_LIMIT,
             GROUPS.PeaqOffice, ROLES.AccessToOffice,
         ),
         alice,
@@ -126,7 +140,7 @@ async function main(nodeWSUrL) {
 
     await contractTransaction(
         contract.tx.addUserOrGroupToRole(
-            { value: 0, gasLimit: 100000 * 1000000 },
+            GAS_LIMIT,
             EMPLOYEES.Leo, ROLES.AccessToOffice,
         ),
         alice,
@@ -135,7 +149,7 @@ async function main(nodeWSUrL) {
     [GROUPS.PeaqOffice, EMPLOYEES.Leo].forEach(async (userGroup) => {
         callValue = await contract.query.readUserOrGroupRoles(
             alice.address,
-            { value: 0, gasLimit: -1 },
+            GAS_LIMIT,
             userGroup,
         );
         assert.equal(callValue.output.length, 1);
@@ -145,7 +159,7 @@ async function main(nodeWSUrL) {
     // Assign Perm
     await contractTransaction(
         contract.tx.addRoleToPermission(
-            { value: 0, gasLimit: 100000 * 1000000 },
+            GAS_LIMIT,
             ROLES.AccessToOffice, PERMS.GrantMainDoorUnlock,
         ),
         alice,
@@ -153,7 +167,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.readPermissions(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         ROLES.AccessToOffice,
     );
     assert.equal(callValue.output.length, 1);
@@ -163,7 +177,7 @@ async function main(nodeWSUrL) {
     [EMPLOYEES.Tanisha, EMPLOYEES.Anton, EMPLOYEES.Leo].forEach(async (employee) => {
         callValue = await contract.query.checkAccess(
             alice.address,
-            { value: 0, gasLimit: -1 },
+            GAS_LIMIT,
             employee,
             PERMS.GrantMainDoorUnlock,
         );
@@ -172,7 +186,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         EMPLOYEES.Maryna,
         PERMS.GrantMainDoorUnlock,
     );

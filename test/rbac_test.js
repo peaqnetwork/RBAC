@@ -4,10 +4,16 @@ const { CodePromise, ContractPromise } = require('@polkadot/api-contract');
 const fs = require('fs');
 const assert = require('assert').strict;
 const yargs = require('yargs/yargs');
+const { BN, BN_ONE } = require('@polkadot/util');
+const { WeightV2 } = require('@polkadot/types/interfaces');
 
-const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:9944';
+const MAX_CALL_WEIGHT = new BN(5_000_000_000).isub(BN_ONE);
+// const MAX_STORAGE_LIMIT = new BN(100_000_000_000_000_000);
+const PROOFSIZE = new BN(1_000_000);
+
+const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:10044';
 const RBAC_CONTRACT_PATH = '../target/ink/rbac.contract';
-const WAIT_TIME = 13000;
+const WAIT_TIME = 50000;
 
 
 const USER_ADDRS = [
@@ -41,6 +47,16 @@ async function main(nodeWSUrL) {
     const api = await ApiPromise.create({
         provider,
     });
+
+    const GAS_LIMIT = {
+        gasLimit: api?.registry.createType('WeightV2', {
+            refTime: MAX_CALL_WEIGHT,
+            proofSize: PROOFSIZE,
+        }),
+        storageDepositLimit: 5000000000000000,
+        value: 0,
+    };
+
 
     const doNothingFunc = (result) => {}; // eslint-disable-line
     async function contractTransaction(contractAPI, signer, callback = doNothingFunc) {
@@ -85,7 +101,7 @@ async function main(nodeWSUrL) {
     console.log('----- Test Deploy');
     let addr;
     await contractTransaction(
-        code.tx.default({ gasLimit: 100000 * 1000000 }),
+        code.tx.default(GAS_LIMIT),
         alice,
         (result) => { addr = result.contract.address; },
     );
@@ -95,7 +111,7 @@ async function main(nodeWSUrL) {
 
     let callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[1],
         PERM_ADDRS[0],
     );
@@ -118,14 +134,14 @@ async function main(nodeWSUrL) {
     console.log('----- Test addRoleToPermission');
     await contractTransaction(
         contract.tx.addUserToGroup(
-            { value: 0, gasLimit: 100000 * 1000000 }, USER_ADDRS[0], GROUP_ADDRS[0],
+            GAS_LIMIT, USER_ADDRS[0], GROUP_ADDRS[0],
         ),
         alice,
     );
 
     await contractTransaction(
         contract.tx.addUserToGroup(
-            { value: 0, gasLimit: 100000 * 1000000 }, USER_ADDRS[0], GROUP_ADDRS[1],
+            GAS_LIMIT, USER_ADDRS[0], GROUP_ADDRS[1],
         ),
         alice,
     );
@@ -135,7 +151,7 @@ async function main(nodeWSUrL) {
     // let callValue = [];
     callValue = await contract.query.readUserGroup(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         GROUP_ADDRS[0],
     );
     assert.equal(callValue.output.length, 1);
@@ -143,7 +159,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.readUserGroup(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         GROUP_ADDRS[1],
     );
     assert.equal(callValue.output.length, 1);
@@ -151,7 +167,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.readUserGroup(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         GROUP_ADDRS[2],
     );
     assert.equal(callValue.output.length, 0);
@@ -159,21 +175,21 @@ async function main(nodeWSUrL) {
     // UserGroup assign role
     await contractTransaction(
         contract.tx.addUserOrGroupToRole(
-            { value: 0, gasLimit: 100000 * 1000000 }, GROUP_ADDRS[0], ROLE_ADDRS[0],
+            GAS_LIMIT, GROUP_ADDRS[0], ROLE_ADDRS[0],
         ),
         alice,
     );
 
     await contractTransaction(
         contract.tx.addUserOrGroupToRole(
-            { value: 0, gasLimit: 100000 * 1000000 }, GROUP_ADDRS[1], ROLE_ADDRS[1],
+            GAS_LIMIT, GROUP_ADDRS[1], ROLE_ADDRS[1],
         ),
         alice,
     );
 
     await contractTransaction(
         contract.tx.addUserOrGroupToRole(
-            { value: 0, gasLimit: 100000 * 1000000 }, USER_ADDRS[0], ROLE_ADDRS[2],
+            GAS_LIMIT, USER_ADDRS[0], ROLE_ADDRS[2],
         ),
         alice,
     );
@@ -183,7 +199,7 @@ async function main(nodeWSUrL) {
     // Permission ROLE_ADDRS[0] has PERM_ADDRS[0]
     callValue = await contract.query.readUserOrGroupRoles(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         GROUP_ADDRS[0],
     );
     assert.equal(callValue.output.length, 1);
@@ -191,7 +207,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.readUserOrGroupRoles(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         GROUP_ADDRS[1],
     );
     assert.equal(callValue.output.length, 1);
@@ -199,7 +215,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.readUserOrGroupRoles(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[0],
     );
     assert.equal(callValue.output.length, 3);
@@ -211,7 +227,7 @@ async function main(nodeWSUrL) {
     // Add role[0] --> perm[0]
     await contractTransaction(
         contract.tx.addRoleToPermission(
-            { value: 0, gasLimit: 100000 * 1000000 }, ROLE_ADDRS[0], PERM_ADDRS[0],
+            GAS_LIMIT, ROLE_ADDRS[0], PERM_ADDRS[0],
         ),
         alice,
     );
@@ -219,7 +235,7 @@ async function main(nodeWSUrL) {
     // Add role[0] --> perm[1]
     await contractTransaction(
         contract.tx.addRoleToPermission(
-            { value: 0, gasLimit: 100000 * 1000000 }, ROLE_ADDRS[0], PERM_ADDRS[1],
+            GAS_LIMIT, ROLE_ADDRS[0], PERM_ADDRS[1],
         ),
         alice,
     );
@@ -227,7 +243,7 @@ async function main(nodeWSUrL) {
     // Add role[1] --> perm[2]
     await contractTransaction(
         contract.tx.addRoleToPermission(
-            { value: 0, gasLimit: 100000 * 1000000 }, ROLE_ADDRS[1], PERM_ADDRS[2],
+            GAS_LIMIT, ROLE_ADDRS[1], PERM_ADDRS[2],
         ),
         alice,
     );
@@ -235,7 +251,7 @@ async function main(nodeWSUrL) {
     // Add role[2] --> perm[3]
     await contractTransaction(
         contract.tx.addRoleToPermission(
-            { value: 0, gasLimit: 100000 * 1000000 }, ROLE_ADDRS[2], PERM_ADDRS[3],
+            GAS_LIMIT, ROLE_ADDRS[2], PERM_ADDRS[3],
         ),
         alice,
     );
@@ -245,7 +261,7 @@ async function main(nodeWSUrL) {
     // Permission ROLE_ADDRS[0] has PERM_ADDRS[0]
     callValue = await contract.query.readPermissions(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         ROLE_ADDRS[0],
     );
     assert.equal(callValue.output.length, 2);
@@ -255,7 +271,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.readPermissions(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         ROLE_ADDRS[1],
     );
     assert.equal(callValue.output.length, 1);
@@ -263,7 +279,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.readPermissions(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         ROLE_ADDRS[2],
     );
     assert.equal(callValue.output.length, 1);
@@ -272,7 +288,7 @@ async function main(nodeWSUrL) {
     // Permission ROLE_ADDRS[3] has no permission
     callValue = await contract.query.readPermissions(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         ROLE_ADDRS[3],
     );
     assert.equal(callValue.output.length, 0);
@@ -282,7 +298,7 @@ async function main(nodeWSUrL) {
     // Permission ROLE_ADDRS[0] has PERM_ADDRS[0]
     callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[0],
         PERM_ADDRS[0],
     );
@@ -290,7 +306,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[0],
         PERM_ADDRS[1],
     );
@@ -298,7 +314,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[0],
         PERM_ADDRS[2],
     );
@@ -306,7 +322,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[0],
         PERM_ADDRS[3],
     );
@@ -314,7 +330,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[0],
         PERM_ADDRS[4],
     );
@@ -322,7 +338,7 @@ async function main(nodeWSUrL) {
 
     callValue = await contract.query.checkAccess(
         alice.address,
-        { value: 0, gasLimit: -1 },
+        GAS_LIMIT,
         USER_ADDRS[1],
         PERM_ADDRS[0],
     );
@@ -332,7 +348,7 @@ async function main(nodeWSUrL) {
 
 const { argv } = yargs(process.argv.slice(2))
     .usage('Usage: $0 --node_ws URL [options]')
-    .example('$0 --node_ws wss://127.0.0.1:9944', 'Start to deploy')
+    .example('$0 --node_ws wss://127.0.0.1:10044', 'Start to deploy')
     .option('node_ws', {
         describe: 'The width of the area.',
         type: 'string',

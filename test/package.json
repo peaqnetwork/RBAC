@@ -5,9 +5,9 @@
   "author": "[Jay] <[pan@peaq.io]>",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^7.9.1",
-    "@polkadot/api-contract": "^7.9.1",
-    "@polkadot/keyring": "^8.4.1",
+    "@polkadot/api": "^10.11.1",
+    "@polkadot/api-contract": "^10.11.1",
+    "@polkadot/keyring": "^10.1.14",
     "yargs": "^17.3.1"
   },
   "scripts": {
