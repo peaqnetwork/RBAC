@@ -11,7 +11,7 @@ const MAX_CALL_WEIGHT = new BN(50_000_000_000).isub(BN_ONE);
 const PROOFSIZE = new BN(2_000_000);
 
 const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:10044';
-const RBAC_CONTRACT_PATH = '../target/ink/rbac.contract';
+const RBAC_CONTRACT_PATH = './rbac.contract';
 const WAIT_TIME = 38000;
 
 const GROUPS = {

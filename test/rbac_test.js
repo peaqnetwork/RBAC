@@ -7,12 +7,11 @@ const yargs = require('yargs/yargs');
 const { BN, BN_ONE } = require('@polkadot/util');
 const { WeightV2 } = require('@polkadot/types/interfaces');
 
-const MAX_CALL_WEIGHT = new BN(5_000_000_000).isub(BN_ONE);
-// const MAX_STORAGE_LIMIT = new BN(100_000_000_000_000_000);
-const PROOFSIZE = new BN(1_000_000);
+const MAX_CALL_WEIGHT = new BN(50_000_000_000).isub(BN_ONE);
+const PROOFSIZE = new BN(2_000_000);
 
 const DEFAULT_NODE_WS_URL = 'ws://127.0.0.1:10044';
-const RBAC_CONTRACT_PATH = '../target/ink/rbac.contract';
+const RBAC_CONTRACT_PATH = './rbac.contract';
 const WAIT_TIME = 50000;
 
 

@@ -83,7 +83,7 @@ npm install
 
 npm run test
 ```
-However, before you run the scripts, you have to generate the ink contract file in advance.
+However, before you run the scripts, you have to generate the ink contract file in advance. Note: Now the RBAC contract dat is checked in; therefore, people don't need to build it if you only want to deploy and test it.
 
 ## Seed Data
 Another script in the test folder is the rbac_deploy script. It'll help to deploy the fake data for checking on polkadot.js UI.
